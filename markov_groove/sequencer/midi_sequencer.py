@@ -3,6 +3,7 @@ from typing import List, Union
 import numpy as np
 from nptyping import NDArray
 from pretty_midi import Instrument, Note, PrettyMIDI, note_number_to_drum_name
+from matplotlib.ticker import FuncFormatter
 
 from ..audio_file import AudioFile
 from .sequencer import Sequencer
@@ -96,7 +97,7 @@ class MidiSequencer(Sequencer):
             values = [note.pitch if note is not None else np.nan for note in note_row]
             ax_subplot.scatter(x_length, values, color=color, marker=marker)
         ax_subplot.yaxis.set_major_formatter(
-            lambda tick, pos: note_number_to_drum_name(tick)
+            FuncFormatter(lambda tick, pos: note_number_to_drum_name(tick))
         )
         return ax_subplot
 
