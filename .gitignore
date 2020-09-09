@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 temp_*
-*/.temp/*
+.temp/*
 
 # C extensions
 *.so
@@ -127,3 +127,6 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
+
+#vs code
+.vscode/*
