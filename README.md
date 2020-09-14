@@ -11,6 +11,9 @@
     <a href="https://github.com/psf/black">
         <img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000?style=for-the-badge"">
     </a>
+    <a href="https://colab.research.google.com/github/googlecolab/colabtools/blob/master/notebooks/colab-github-demo.ipynb#scrollTo=8QAWNjizy_3O">
+        <img alt="Open In Colab" src="https://img.shields.io/static/v1?label=Notebook&message=Open%20in%20Colab&color=yellow&style=for-the-badge"">
+    </a>
 </p>
 
 ## Install prerequisites
