@@ -6,29 +6,13 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
-from nptyping import NDArray
+from nptyping import NDArray, Float32
 from pretty_midi import PrettyMIDI
 
 from .audio_file import AudioFile
 from .onset_detector import OnsetAlgorithm
-from .sampler import Sampler
+from .sampler import Sampler, KeyFunction
 from .sequencer import AudioSequencer, Sequencer
-
-
-def create_beat(
-    sequence: NDArray[np.float32],
-    samples: Dict[float, NDArray[np.float32]],
-    bpm: int,
-    beats: int,
-    steps: int,
-) -> AudioFile:
-    """
-    Create a new AudioFile, based on the given sequence.
-    """
-    beat_samples = [samples[freq] for idx, freq in sequence if not np.isnan(freq)]
-    return AudioSequencer(sequence, bpm=bpm, beats=beats, steps=steps).create_beat(
-        beat_samples
-    )
 
 
 def create_knowledge_base(
@@ -37,18 +21,21 @@ def create_knowledge_base(
     beats: int,
     steps: int,
     verbose: bool = False,
-) -> Tuple[List[Sequencer], Dict[float, NDArray[np.float32]]]:
+    keyfnc_type: KeyFunction = KeyFunction.CENTROID,
+) -> Tuple[List[Sequencer], Dict[float, NDArray[Float32]]]:
     """
     Create the knowledge base from multiple files.
     Prints the File name and its bpm, as well as when a doubled key was found.
     Returns a list of sequences and the samples as dict, which can later be looked up.
     """
     sequences: List[Sequencer] = []
-    samples: Dict[float, NDArray[np.float32]] = {}
+    samples: Dict[float, NDArray[Float32]] = {}
     for i, audio in enumerate(audios):
         if verbose:
             print("File {} has {}bpm".format(i, audio.bpm))
-        sampler: Sampler = Sampler.from_audio(audio, onset_algorithm=onset_algo)
+        sampler: Sampler = Sampler.from_audio(
+            audio, onset_algorithm=onset_algo, keyfnc_type=keyfnc_type,
+        )
         sequencer: AudioSequencer = AudioSequencer.from_sampler(
             sampler, audio.bpm, beats=beats, steps=steps
         )
@@ -71,11 +58,10 @@ def read_audio_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
     For all following directories use **/*.*.
     """
     folder = Path(path)
-    audios: List[AudioFile] = [
+    return [
         AudioFile.from_file(file.resolve(), int(file.parent.stem.rstrip("bpm")))
         for file in folder.glob(regex)
     ]
-    return audios
 
 
 def read_midi_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
@@ -85,3 +71,16 @@ def read_midi_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
     """
     folder = Path(path)
     return [PrettyMIDI(file.as_posix()) for file in folder.glob(regex)]
+
+
+def find_closest(array: NDArray, value):
+    idx = (np.abs(array - value)).min()
+    return array[idx]
+
+
+def find_closest_samples(
+    sequencer: AudioSequencer, samples: Dict[float, NDArray[np.float32]]
+):
+    for idx, key in enumerate(sequencer.pattern):
+        if not key[1].isnan(key):
+            sequencer.pattern[idx] = find_closest(np.array(samples.keys()), key)

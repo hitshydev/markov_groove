@@ -2,22 +2,27 @@
 TODO: This is part of bla
 """
 from abc import ABC, abstractmethod
-from typing import Any, List, Union
+from typing import Any, List, Union, Final, Dict
 
-from nptyping import NDArray
+from nptyping import NDArray, Float32
 
 from markov_groove.audio_file import AudioFile
 
 
 class Sequencer(ABC):
     """
-    TODO: This is part of bla
+    A sequencer can be initalized
     """
 
-    pattern: NDArray[Any]
+    # pattern: NDArray[Any]
+    # bpm: int
+    # beats: int
+    # steps: int
 
     @abstractmethod
-    def create_beat(self, *args, sample_rate: int = 44100, **kwargs) -> AudioFile:
+    def create_beat(
+        self, samples: Dict[float, NDArray[Float32]] = None, sample_rate: int = 44100,
+    ) -> AudioFile:
         """
         Create a beat from the pattern in the sequencer.
         This method requires different parameters for every implementation of Sequencer.
@@ -31,7 +36,7 @@ class Sequencer(ABC):
 
     @classmethod
     @abstractmethod
-    def decode(cls, string_pattern: List[str]):
+    def decode(cls, string_pattern: List[str], bpm: int, beats: int, steps: int):
         """
         Decode the pattern of a string and create a sequencer from it.
         """

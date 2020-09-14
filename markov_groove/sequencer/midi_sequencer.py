@@ -1,15 +1,17 @@
-from typing import List, Union
+from typing import Dict, Final, List, Union, Tuple
 
 import numpy as np
-from nptyping import NDArray
+from matplotlib.ticker import FuncFormatter, MultipleLocator
+from mido import bpm2tempo, second2tick, tempo2bpm, tick2second
+from nptyping import Float32, NDArray
 from pretty_midi import Instrument, Note, PrettyMIDI, note_number_to_drum_name
-from matplotlib.ticker import FuncFormatter
 
 from ..audio_file import AudioFile
 from .sequencer import Sequencer
 
-_VELOCITY: int = 100
-_NOTE_DURATION: float = 0.05
+# Standard values for note creation
+_VELOCITY: Final[int] = 100
+_NOTE_DURATION: Final[float] = 0.05
 
 
 class MidiSequencer(Sequencer):
@@ -17,75 +19,100 @@ class MidiSequencer(Sequencer):
     TODO: This is part of bla
     """
 
-    pattern: NDArray[Note]
-    column_sampling: int
+    pattern: Final[NDArray[Note]]
+    bpm: Final[int]
+    beats: Final[int]
+    steps: Final[int]
 
-    def __init__(self, pattern: NDArray[Note], column_sampling: int = 100):
+    def __init__(
+        self, pattern: NDArray[Note], bpm: int, beats: int, steps: int,
+    ):
+        if steps < 128:
+            raise ValueError(
+                "The amount of steps is smaller than 128, which might lead to inaccurate beats!"
+            )
         self.pattern = pattern
-        self.column_sampling = column_sampling
+        self.bpm = bpm
+        self.beats = beats
+        self.steps = steps
 
     @classmethod
-    def from_file(cls, mid: PrettyMIDI, column_sampling: int = 100):
+    def from_file(
+        cls, mid: PrettyMIDI, bpm: int = 120, beats: int = 8, steps: int = 128,
+    ):
         """
         TODO: This is part of bla
         """
+        ppqn = int(np.round(steps / 4))
+        end_tick = beats * steps
+
         drum_track = _find_drum_track(mid)
         # Allocate the array
-        pattern = np.empty(
-            (128, int(column_sampling * drum_track.get_end_time() + 1)), dtype=np.object
-        )
+        pattern = np.empty((128, int(end_tick + 1)), dtype=np.object)
         pattern.fill(None)
         # Add up notes
+        print(mid._tick_scales)
+        print(mid.resolution)
         for note in drum_track.notes:
-            pattern[note.pitch, int(note.start * column_sampling)] = note
-        return cls(pattern, column_sampling)
+            note_start_tick = int(
+                np.round(second2tick(note.start, ppqn, bpm2tempo(88)))
+            )
+            if note_start_tick <= end_tick:
+                pattern[note.pitch, note_start_tick] = note
+        return cls(pattern, bpm, beats, steps)
 
-    def create_beat(self, *args, sample_rate: int = 44100, **kwargs) -> AudioFile:
+    def create_beat(
+        self, samples: Dict[float, NDArray[Float32]] = None, sample_rate: int = 44100,
+    ) -> AudioFile:
         """
         Create a beat from the pattern in the sequencer.
         """
-        bpm = args[1] if len(args) > 1 else 120
-        for key, value in kwargs.items():
-            if key == "bpm":
-                bpm = value
-
-        mid = PrettyMIDI(initial_tempo=bpm)
+        if samples is not None:
+            raise ValueError(
+                "Samples are not needed to create a beat for an MidiSequencer!"
+            )
+        mid = PrettyMIDI(initial_tempo=self.bpm)
         drum_track = Instrument(program=0, is_drum=True, name="drums")
         mid.instruments.append(drum_track)
         for row in self.pattern:
-            for value in row:
-                if value is not None:
-                    drum_track.notes.append(value)
+            for note in row:
+                if note is not None:
+                    drum_track.notes.append(note)
         return AudioFile(
-            np.array(mid.fluidsynth(fs=sample_rate), dtype=np.float32), bpm, sample_rate
+            np.array(mid.fluidsynth(fs=sample_rate), dtype=np.float32),
+            self.bpm,
+            sample_rate,
         )
 
     @classmethod
-    def decode(cls, string_pattern: List[str]):
+    def decode(cls, string_pattern: List[str], bpm: int, beats: int, steps: int):
         """
         Decode the pattern of a string list and create a sequencer from it.
         """
-        # TODO: Estimate column_sampling
-        column_sampling: int = 100
+        ppqn = int(np.round(steps / 4))
+        end_tick = beats * steps
         # Allocate the array
         pattern = np.empty((128, len(string_pattern)), dtype=np.object)
         pattern.fill(None)
         for string in string_pattern:
-            notes = _string_to_notes(string)
-            for note in notes:
-                pattern[note.pitch, int(note.start * column_sampling)] = note
+            for pitch, start_tick in _string_to_tuples(string):
+                if start_tick <= end_tick:
+                    start_seconds = tick2second(start_tick, ppqn, bpm2tempo(bpm))
+                    pattern[pitch, start_tick] = Note(
+                        _VELOCITY, pitch, start_seconds, start_seconds + _NOTE_DURATION
+                    )
 
-        return cls(pattern, column_sampling)
+        return cls(pattern, bpm, beats, steps)
 
     def encode(self) -> List[str]:
         """
         Encode the pattern in a list of strings.
         """
         string_list = ["" for _ in range(self.pattern.shape[-1])]
-        for row in self.pattern:
-            for idx, note in enumerate(row):
+        for pitch, row in enumerate(self.pattern):
+            for start_tick, note in enumerate(row):
                 if note is not None:
-                    string_list[idx] += f"{note.pitch},{note.start};"
+                    string_list[start_tick] += f"{pitch},{start_tick};"
         return string_list
 
     def visualize(self, ax_subplot, color: Union[NDArray, str], marker: str = "2"):
@@ -99,6 +126,7 @@ class MidiSequencer(Sequencer):
         ax_subplot.yaxis.set_major_formatter(
             FuncFormatter(lambda tick, pos: note_number_to_drum_name(tick))
         )
+        ax_subplot.xaxis.set_major_locator(MultipleLocator(base=self.steps))
         return ax_subplot
 
 
@@ -112,12 +140,11 @@ def _find_drum_track(mid: PrettyMIDI) -> Instrument:
     raise ValueError("No drum track found!")
 
 
-def _string_to_notes(string: str) -> List[Note]:
+def _string_to_tuples(string: str) -> List[Tuple[int, float]]:
     arguments = string.split(";")
-    return [_string_to_note(x) for x in arguments if x]
+    return [_string_to_tuple(x) for x in arguments if x]
 
 
-def _string_to_note(string: str) -> Note:
+def _string_to_tuple(string: str) -> Tuple[int, float]:
     arguments = string.split(",")
-    pitch, start = int(arguments[0]), float(arguments[1])
-    return Note(_VELOCITY, pitch, start, start + _NOTE_DURATION)
+    return int(arguments[0]), int(arguments[1])  # pitch, start_tick

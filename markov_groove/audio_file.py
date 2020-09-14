@@ -7,6 +7,7 @@ import essentia as es
 import essentia.standard as estd
 import numpy as np
 from IPython.display import Audio
+from nptyping import Float32, NDArray
 
 
 class AudioFile:
@@ -16,18 +17,17 @@ class AudioFile:
     When initiating with an array, make sure the sampling rate is correct.
 
     Args:
-        audio (Union[Path, es.array]): The path where the audio file is located
-                                       or represented in binary form as np.array of float32.
+        audio (NDArray[Float32]): The audio represented in binary form as np.array of float32.
         bpm (int): Optional, provides additonal information for future analysis. Defaults to 0.
         sample_rate (int): The desired sampling rate of the audio file.
-                          Needs to match the sampling rate when reading from binary form.
-                          Defaults to 44.1 khz
+                            Needs to match the sampling rate when reading from binary form.
+                            Defaults to 44.1 khz
 
     Attributes:
-        audio (es.array): The audio in binary form as np.array with dtype float32.
-        bpm (int): The bpm. This might not be set on init and can be checked with check_bpm().
+        audio (NDArray[Float32]): The audio in binary form as np.array with dtype float32.
         file_path (Window): The function to apply to every frame.
         sample_rate (int): The sampling rate.
+        bpm (int): The bpm. This might not be set on init and can be checked with check_bpm().
     """
 
     # The margin is used in check_bpm.
@@ -35,7 +35,7 @@ class AudioFile:
     # The factor is a constant factor, which shows the best results.
     __MARGIN_FACTOR = 15
 
-    audio: es.array
+    audio: NDArray[Float32]
     file_path: Path
     sample_rate: int
     __bpm: float
@@ -94,6 +94,9 @@ class AudioFile:
         return self.__bpm
 
     def display(self, autoplay: bool = False):
+        """
+        Display a given audio through IPython. Useful when using in notebooks.
+        """
         return Audio(data=self.audio, rate=self.sample_rate, autoplay=autoplay)
 
     def mix(self, snd, right: bool = True) -> None:

@@ -6,6 +6,7 @@ from enum import Enum
 import essentia as es
 import essentia.standard as estd
 import numpy as np
+from nptyping import NDArray, Float32
 
 from .audio_file import AudioFile
 
@@ -56,12 +57,12 @@ class OnsetDetector:
 
     Attributes:
         algo (str): String representation of the selected algorithm.
-        onsets (es.array): The indcies of every onsets in seconds.
+        onsets (NDArray[Float32]): The indcies of every onsets in seconds.
 
     """
 
     algo: str
-    onsets: es.array
+    onsets: NDArray[Float32]
     __length: int
 
     def __init__(

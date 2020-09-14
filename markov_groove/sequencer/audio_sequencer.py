@@ -1,12 +1,12 @@
 """
 TODO: Do not use sampler
 """
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Final, List, Union
 
 import essentia as es
 import numpy as np
 from matplotlib.ticker import EngFormatter, MultipleLocator
-from nptyping import NDArray
+from nptyping import Float32, NDArray
 
 from ..audio_file import AudioFile
 from ..onset_detector import OnsetAlgorithm, OnsetDetector
@@ -19,35 +19,20 @@ class AudioSequencer(Sequencer):
     TODO: This is part of bla
     """
 
-    pattern: NDArray[float]
-    __bpm: int
-    __vars: Dict[str, Any]
+    pattern: Final[NDArray[Float32]]
+    bpm: Final[int]
+    beats: Final[int]
+    steps: Final[int]
 
     # max step amount 16
     def __init__(
-        self, pattern: NDArray[float], bpm: int, beats: int = 8, steps: int = 16,
+        self, pattern: NDArray[float], bpm: int, beats: int, steps: int,
     ) -> None:
         self.pattern = pattern
-        self.__bpm = bpm
-        self.__vars = {"beats": beats, "steps": steps}
+        self.bpm = bpm
+        self.beats = beats
+        self.steps = steps
         self.__update_values()
-
-    @classmethod
-    def from_file(
-        cls,
-        file: AudioFile,
-        onsets: es.array = None,
-        onset_algorithm=OnsetAlgorithm.COMPLEX,
-        beats: int = 8,
-        steps: int = 16,
-    ):
-        """
-        Create a sequencer from a file.
-        TODO
-        """
-        if onsets is None:
-            onsets = OnsetDetector(file, onset_algorithm).onsets
-        raise NotImplementedError()
 
     @classmethod
     def from_sampler(
@@ -56,44 +41,30 @@ class AudioSequencer(Sequencer):
         """
         Create a sequencer with an audio sampler by creating the pattern from it.
         """
-        sequencer = cls(None, bpm, beats, steps)
-        sequencer.__set_pattern_from_sampler(sampler)
-        return sequencer
+        step_width = 60 / bpm / steps
+        step_amount = beats * steps
+        pattern = _get_pattern_from_sampler(sampler, step_width, step_amount)
+        return cls(pattern, bpm, beats, steps)
 
-    @property
-    def bpm(self) -> int:
-        """
-        Returns the current bpm of the sequencer.
-        """
-        return self.__bpm
-
-    @bpm.setter
-    def bpm(self, bpm: int) -> None:
-        """
-        Set the bpm and adjust all related attributes.
-        """
-        self.__bpm = bpm
-        self.__update_values()
-
-    def create_beat(self, *args, sample_rate: int = 44100, **kwargs) -> AudioFile:
+    def create_beat(
+        self, samples: Dict[float, NDArray[Float32]] = None, sample_rate: int = 44100,
+    ) -> AudioFile:
         """
         Create a beat from the given samples,
         which have to match the length of occurrences in the pattern.
         """
-        samples = args[1] if len(args) > 1 else None
-        for key, value in kwargs.items():
-            if key == "samples":
-                samples = value
-
-        if len(samples) != len(
+        if samples is None:
+            raise ValueError(
+                "Samples are needed to create a beat for an AudioSequencer!"
+            )
+        if len(samples) != len(  # mypy: ignore
             [freq for idx, freq in self.pattern if not np.isnan(freq)]
         ):
             raise ValueError("Number of samples does not match with amount of hits!")
-        step_length = int(np.round(self.__vars["step_width"] * sample_rate))
+
+        step_length = int(np.round(self.__step_width * sample_rate))
         loop_length = int(
-            np.round(
-                self.__vars["step_amount"] * self.__vars["step_width"] * sample_rate
-            )
+            np.round(self.__step_amount * self.__step_width * sample_rate)
         )
         zeros = np.zeros(loop_length, dtype=np.float32)
         zeros_step = np.zeros(step_length, dtype=np.float32)
@@ -107,15 +78,13 @@ class AudioSequencer(Sequencer):
                 raw_audio += tmp[:loop_length]
                 sample_index += 1
 
-        return AudioFile(raw_audio, bpm=self.__bpm)
+        return AudioFile(raw_audio, bpm=self.bpm)
 
-    # mypy: ignore
     @classmethod
     def decode(cls, string_pattern: List[str], bpm: int, beats: int, steps: int):
         """
-        Decode the pattern of a string and create a sequencer from it.
+        Decodes the pattern of a string and create a sequencer from it.
         """
-        # TODO: Estimate beats, steps and bpm
         pattern = np.empty((len(string_pattern), 2), dtype=np.float32)
         for idx, string in enumerate(string_pattern):
             new_idx, freq = string.split(",")
@@ -124,7 +93,7 @@ class AudioSequencer(Sequencer):
 
     def encode(self) -> List[str]:
         """
-        Encode the pattern in a string.
+        Encodes the pattern in a string.
         """
         return [f"{idx},{freq}" for idx, freq in self.pattern]
 
@@ -138,28 +107,27 @@ class AudioSequencer(Sequencer):
         ax_subplot.yaxis.set_major_formatter(formatter)
         ax_subplot.yaxis.set_minor_formatter(formatter)
         ax_subplot.grid(b=True, which="both")
-        ax_subplot.xaxis.set_major_locator(MultipleLocator(base=self.__vars["steps"]))
+        ax_subplot.xaxis.set_major_locator(MultipleLocator(base=self.steps))
         values = [value for idx, value in self.pattern]
         return ax_subplot.scatter(x_length, values, color=color, marker=marker)
 
-    def __set_pattern_from_sampler(self, sampler: Sampler) -> None:
-        time_line = np.linspace(
-            0,
-            self.__vars["step_width"] * self.__vars["step_amount"],
-            self.__vars["step_amount"] + 1,
-        )
-        onset_indices = _find_indices(
-            sampler.onsets, self.__vars["step_width"], time_line
-        )
-        self.pattern = np.array(
-            [[idx, np.nan] for idx in range(len(time_line))], dtype=np.float32
-        )
-        for idx, centroid in zip(onset_indices, sampler.samples):
-            self.pattern[idx][-1] = centroid
-
     def __update_values(self) -> None:
-        self.__vars["step_width"] = 60 / self.__bpm / self.__vars["steps"]
-        self.__vars["step_amount"] = self.__vars["beats"] * self.__vars["steps"]
+        self.__step_width = 60 / self.bpm / self.steps
+        self.__step_amount = self.beats * self.steps
+
+
+def _get_pattern_from_sampler(
+    sampler: Sampler, step_width, step_amount,
+) -> NDArray[Float32]:
+    time_line = np.linspace(0, step_width * step_amount, step_amount + 1,)
+    onset_indices = _find_indices(sampler.onsets, step_width, time_line)
+    pattern = np.array(
+        [[idx, np.nan] for idx in range(len(time_line))], dtype=np.float32
+    )
+    for idx, key_value in zip(onset_indices, sampler.samples):
+        pattern[idx][-1] = key_value
+
+    return pattern
 
 
 def _find_indices(
