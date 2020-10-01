@@ -24,7 +24,6 @@ class AudioSequencer(Sequencer):
     beats: Final[int]
     steps: Final[int]
 
-    # max step amount 16
     def __init__(
         self, pattern: NDArray[float], bpm: int, beats: int, steps: int,
     ) -> None:
@@ -57,9 +56,7 @@ class AudioSequencer(Sequencer):
             raise ValueError(
                 "Samples are needed to create a beat for an AudioSequencer!"
             )
-        if len(samples) != len(  # mypy: ignore
-            [freq for idx, freq in self.pattern if not np.isnan(freq)]
-        ):
+        if len(samples) != np.sum(np.isfinite(self.pattern)):
             raise ValueError("Number of samples does not match with amount of hits!")
 
         step_length = int(np.round(self.__step_width * sample_rate))
@@ -70,7 +67,7 @@ class AudioSequencer(Sequencer):
         zeros_step = np.zeros(step_length, dtype=np.float32)
         raw_audio = np.zeros(loop_length, dtype=np.float32)
         sample_index = 0
-        for idx, freq in self.pattern:
+        for idx, freq in enumerate(self.pattern):
             if not np.isnan(freq):
                 tmp = np.tile(zeros_step, int(idx))
                 tmp = np.append(tmp, samples[sample_index])
@@ -85,17 +82,16 @@ class AudioSequencer(Sequencer):
         """
         Decodes the pattern of a string and create a sequencer from it.
         """
-        pattern = np.empty((len(string_pattern), 2), dtype=np.float32)
+        pattern = np.empty((len(string_pattern)), dtype=np.float32)
         for idx, string in enumerate(string_pattern):
-            new_idx, freq = string.split(",")
-            pattern[idx, 0], pattern[idx, 1] = int(float(new_idx)), np.float32(freq)
+            pattern[idx] = np.float32(string)
         return cls(pattern, bpm, beats, steps)
 
     def encode(self) -> List[str]:
         """
         Encodes the pattern in a string.
         """
-        return [f"{idx},{freq}" for idx, freq in self.pattern]
+        return [f"{freq}" for freq in self.pattern]
 
     def visualize(self, ax_subplot, color: Union[NDArray, str], marker: str = "+"):
         """
@@ -108,8 +104,7 @@ class AudioSequencer(Sequencer):
         ax_subplot.yaxis.set_minor_formatter(formatter)
         ax_subplot.grid(b=True, which="both")
         ax_subplot.xaxis.set_major_locator(MultipleLocator(base=self.steps))
-        values = [value for idx, value in self.pattern]
-        return ax_subplot.scatter(x_length, values, color=color, marker=marker)
+        return ax_subplot.scatter(x_length, self.pattern, color=color, marker=marker)
 
     def __update_values(self) -> None:
         self.__step_width = 60 / self.bpm / self.steps
@@ -119,13 +114,11 @@ class AudioSequencer(Sequencer):
 def _get_pattern_from_sampler(
     sampler: Sampler, step_width, step_amount,
 ) -> NDArray[Float32]:
-    time_line = np.linspace(0, step_width * step_amount, step_amount + 1,)
+    time_line = np.linspace(0, step_width * step_amount, step_amount + 1)
     onset_indices = _find_indices(sampler.onsets, step_width, time_line)
-    pattern = np.array(
-        [[idx, np.nan] for idx in range(len(time_line))], dtype=np.float32
-    )
+    pattern = np.full(time_line.shape, np.nan, dtype=np.float32)
     for idx, key_value in zip(onset_indices, sampler.samples):
-        pattern[idx][-1] = key_value
+        pattern[idx] = key_value
 
     return pattern
 
