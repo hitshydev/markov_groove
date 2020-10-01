@@ -108,6 +108,10 @@ class AudioFile:
         else:
             self.audio = estd.StereoMuxer()(snd.audio, self.audio)
 
+    def normalise(self) -> None:
+        self.audio = self.audio - np.mean(self.audio)
+        self.audio = self.audio / np.max(self.audio) - np.min(self.audio)
+
     def save(self, file_path: Path = Path.cwd() / ".temp" / "audio.wav") -> None:
         """
         Export the AudioFile at the newly given path.
