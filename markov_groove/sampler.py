@@ -1,10 +1,10 @@
 """
-The sampler module consist mainly of the 
+The sampler module consist mainly of the
 Sampler class. The Sampler class is used for
 creating samples from an audio file with their onsets.
-The length of each sample varies, and is limited by the next 
+The length of each sample varies, and is limited by the next
 onset index.
-The KeyFunction enum is used to define the keyfunctions, 
+The KeyFunction enum is used to define the keyfunctions,
 that are used to describe the samples in a TODO: mathematical
 way.
 """
@@ -44,12 +44,12 @@ class Sampler:
         onsets (List[float]): The onsets of each sample. The length of this has to match
                                 the amount of the given samples.
         samples (Dict[Any, NDArray[Float32]]): The samples or audio snippets that have
-                                been detetceted, when determining the onsets. The length has 
+                                been detetceted, when determining the onsets. The length has
                                 too much the amount of the given onsets.
         sample_rate (int): The sampling rate of the samples.
 
     Attributes:
-        onsets (List[float]): The onsets of each sample. 
+        onsets (List[float]): The onsets of each sample.
         samples (Dict[Any, NDArray[Float32]]): The samples.
         sample_rate (int): The sampling rate of the samples.
 
@@ -110,7 +110,10 @@ class Sampler:
 
 
 def _key_fnc(
-    sample: NDArray[Float32], frequency_rate: int, windowfnc: Window, type: KeyFunction,
+    sample: NDArray[Float32],
+    frequency_rate: int,
+    windowfnc: Window,
+    key_type: KeyFunction,
 ):
     """
     This function computes the key function,
@@ -119,24 +122,24 @@ def _key_fnc(
     the frequency_rate should be equal to the half of the samplerate.
     """
 
-    if type == KeyFunction.CENTROID:
+    if key_type == KeyFunction.CENTROID:
         return _get_centroid(
             sample,
             estd.Centroid(range=frequency_rate),
             estd.Spectrum(),
             estd.Windowing(type=windowfnc.value),
         )
-    elif type == KeyFunction.MAX:
+    if key_type == KeyFunction.MAX:
         return _get_max(sample, estd.Spectrum(), estd.Windowing(type=windowfnc.value),)
-    elif type == KeyFunction.MFCC:
+    if key_type == KeyFunction.MFCC:
         return _get_mfcc(
             sample, estd.MFCC(), estd.Spectrum(), estd.Windowing(type=windowfnc.value),
         )
-    elif type == KeyFunction.MELBANDS:
+    if key_type == KeyFunction.MELBANDS:
         return _get_melbands(
             sample, estd.MFCC(), estd.Spectrum(), estd.Windowing(type=windowfnc.value),
         )
-    elif type == KeyFunction.MELBANDS_LOG:
+    if key_type == KeyFunction.MELBANDS_LOG:
         return estd.UnaryOperator(type="log")(
             _get_melbands(
                 sample,
@@ -145,8 +148,7 @@ def _key_fnc(
                 estd.Windowing(type=windowfnc.value),
             )
         )
-    else:
-        raise ValueError("Keyfunction is not defined!")
+    raise ValueError("Keyfunction is not defined!")
 
 
 def _get_centroid(sample: NDArray[Float32], centroid, spectrum, window) -> float:
@@ -180,4 +182,3 @@ def _get_melbands(sample: NDArray[Float32], mfcc, spectrum, window) -> float:
     Return the mfcc of a sample.
     """
     raise NotImplementedError()
-
