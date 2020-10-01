@@ -1,5 +1,5 @@
 """
-The util module holds various helper functions, that 
+The util module holds various helper functions, that
 are useful, when for instance preprocessing larger datasets
 or reading multiple audio files.
 """
