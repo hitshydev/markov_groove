@@ -11,7 +11,7 @@ from .sequencer import Sequencer
 
 # Standard values for note creation
 _VELOCITY: Final[int] = 100
-_NOTE_DURATION: Final[float] = 0.05
+_NOTE_DURATION: Final[float] = 0.5
 
 
 class MidiSequencer(Sequencer):
@@ -27,10 +27,6 @@ class MidiSequencer(Sequencer):
     def __init__(
         self, pattern: NDArray[Note], bpm: int, beats: int, steps: int,
     ):
-        if steps < 128:
-            raise ValueError(
-                "The amount of steps is smaller than 128, which might lead to inaccurate beats!"
-            )
         self.pattern = pattern
         self.bpm = bpm
         self.beats = beats
@@ -38,7 +34,7 @@ class MidiSequencer(Sequencer):
 
     @classmethod
     def from_file(
-        cls, mid: PrettyMIDI, bpm: int = 120, beats: int = 8, steps: int = 128,
+        cls, mid: PrettyMIDI, bpm: int, beats: int = 8, steps: int = 16,
     ):
         """
         TODO: This is part of bla
@@ -51,11 +47,9 @@ class MidiSequencer(Sequencer):
         pattern = np.empty((128, int(end_tick + 1)), dtype=np.object)
         pattern.fill(None)
         # Add up notes
-        print(mid._tick_scales)
-        print(mid.resolution)
         for note in drum_track.notes:
             note_start_tick = int(
-                np.round(second2tick(note.start, ppqn, bpm2tempo(88)))
+                np.round(second2tick(note.start, ppqn, bpm2tempo(bpm)))
             )
             if note_start_tick <= end_tick:
                 pattern[note.pitch, note_start_tick] = note
@@ -94,6 +88,26 @@ class MidiSequencer(Sequencer):
         # Allocate the array
         pattern = np.empty((128, len(string_pattern)), dtype=np.object)
         pattern.fill(None)
+        for start_tick, string in enumerate(string_pattern):
+            for pitch in _string_to_pitch(string):
+                if start_tick <= end_tick:
+                    start_seconds = tick2second(start_tick, ppqn, bpm2tempo(bpm))
+                    pattern[pitch, start_tick] = Note(
+                        _VELOCITY, pitch, start_seconds, start_seconds + _NOTE_DURATION
+                    )
+
+        return cls(pattern, bpm, beats, steps)
+
+    @classmethod
+    def decode2(cls, string_pattern: List[str], bpm: int, beats: int, steps: int):
+        """
+        Decode the pattern of a string list and create a sequencer from it.
+        """
+        ppqn = int(np.round(steps / 4))
+        end_tick = beats * steps
+        # Allocate the array
+        pattern = np.empty((128, len(string_pattern)), dtype=np.object)
+        pattern.fill(None)
         for string in string_pattern:
             for pitch, start_tick in _string_to_tuples(string):
                 if start_tick <= end_tick:
@@ -105,6 +119,17 @@ class MidiSequencer(Sequencer):
         return cls(pattern, bpm, beats, steps)
 
     def encode(self) -> List[str]:
+        """
+        Encode the pattern in a list of strings.
+        """
+        string_list = ["" for _ in range(self.pattern.shape[-1])]
+        for pitch, row in enumerate(self.pattern):
+            for start_tick, note in enumerate(row):
+                if note is not None:
+                    string_list[start_tick] += f"{pitch};"
+        return string_list
+
+    def encode2(self) -> List[str]:
         """
         Encode the pattern in a list of strings.
         """
@@ -148,3 +173,8 @@ def _string_to_tuples(string: str) -> List[Tuple[int, float]]:
 def _string_to_tuple(string: str) -> Tuple[int, float]:
     arguments = string.split(",")
     return int(arguments[0]), int(arguments[1])  # pitch, start_tick
+
+
+def _string_to_pitch(string: str) -> List[int]:
+    arguments = string.split(";")
+    return [int(x) for x in arguments if x]
