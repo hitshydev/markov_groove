@@ -1,5 +1,7 @@
 """
-TODO: Document me
+The util module holds various helper functions, that 
+are useful, when for instance preprocessing larger datasets
+or reading multiple audio files.
 """
 
 from pathlib import Path
@@ -64,7 +66,7 @@ def read_audio_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
     ]
 
 
-def read_midi_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
+def read_midi_files(path: Union[Path, str], regex: str,) -> List[PrettyMIDI]:
     """
     Reads mid files in given folder and returns a list of PrettyMIDI.
     For all following directories use **/*.*.
@@ -74,6 +76,13 @@ def read_midi_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
 
 
 def find_closest(array: NDArray, value):
+    """
+    Find the closest value in an array.
+    The value and the values stored in the array
+    can only be of numeric nature.
+    Furthermore the dtype of array and the value
+    have to be the same.
+    """
     idx = (np.abs(array - value)).min()
     return array[idx]
 
@@ -81,6 +90,11 @@ def find_closest(array: NDArray, value):
 def find_closest_samples(
     sequencer: AudioSequencer, samples: Dict[float, NDArray[np.float32]]
 ):
+    """
+    TODO:
+    Find the closest sample in a given Dictonary of samples
+    by using the samples in the seqencer.
+    """
     for idx, key in enumerate(sequencer.pattern):
-        if not key[1].isnan(key):
+        if not np.isnan(key):
             sequencer.pattern[idx] = find_closest(np.array(samples.keys()), key)
