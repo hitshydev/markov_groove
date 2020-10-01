@@ -1,5 +1,8 @@
 """
-TODO: This is part of bla
+This framework allows for preprocessing audio files 
+to make them usable in a machine learning context.
+The markov_groove framework was created 
+and written by Jan-Niclas de Vries.
 """
 
 from .audio_file import *
