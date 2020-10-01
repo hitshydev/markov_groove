@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
-from nptyping import NDArray, Float32
+from nptyping import Float32, NDArray
 from pretty_midi import PrettyMIDI
 
 from .audio_file import AudioFile
 from .onset_detector import OnsetAlgorithm
-from .sampler import Sampler, KeyFunction
+from .sampler import KeyFunction, Sampler
 from .sequencer import AudioSequencer, Sequencer
 
 
