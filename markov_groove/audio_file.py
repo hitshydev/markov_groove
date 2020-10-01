@@ -1,5 +1,5 @@
 """
-TODO: This is part of bla
+This module consist solely of the AudioFile class.
 """
 from pathlib import Path
 
@@ -18,7 +18,7 @@ class AudioFile:
 
     Args:
         audio (NDArray[Float32]): The audio represented in binary form as np.array of float32.
-        bpm (int): Optional, provides additonal information for future analysis. Defaults to 0.
+        bpm (int): Optional, provides additional information for future analysis. Defaults to 0.
         sample_rate (int): The desired sampling rate of the audio file.
                             Needs to match the sampling rate when reading from binary form.
                             Defaults to 44.1 khz
@@ -108,7 +108,11 @@ class AudioFile:
         else:
             self.audio = estd.StereoMuxer()(snd.audio, self.audio)
 
-    def normalise(self) -> None:
+    def normalize(self) -> None:
+        """
+        Normalize the audio, by scaling the raw audio
+        between one and minus one.
+        """
         self.audio = self.audio - np.mean(self.audio)
         self.audio = self.audio / np.max(self.audio) - np.min(self.audio)
 
