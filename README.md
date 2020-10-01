@@ -16,7 +16,33 @@
     </a>
 </p>
 
+MarkovGroove is a small framework, that uses essentia and PrettyMIDI to convert audio files
+into sequencers that can later be used for machine learning tasks. The library got its name
+from the mathmatician Andrey Markov, since it was designed to be used with HiddenMarkovModels.
+It is part of my bachelor thesis so please cite, if you are using this in a scientific context.
+
+To use the framework in your project or notebooks just import markov_groove:
+
+    import markov_groove as mg
+    # Read a mid file
+    project.do_stuff()
+    # Create a sequencer from it
+    project.do_stuff()
+    # Visualize the pattern
+    project.do_stuff()
+
+There are also some more examples and tutorials under notebooks!
+
+## Features
+
+* Read Audio files
+* Read Midi files
+* Create step sequencer from audio files
+* Extract Samples from onset locations
+
 ## Install prerequisites
+Some libraries are needed prior before using.
+
 ### Essentia
     sudo apt-get install build-essential libeigen3-dev libyaml-dev libfftw3-dev libavcodec-dev libavformat-dev libavutil-dev libavresample-dev python-dev libsamplerate0-dev libtag1-dev libchromaprint-dev python-six
 
@@ -31,3 +57,5 @@
 
 ### FluidSynth
     sudo apt-get install fluidsynth
+
+TODO: Add citetation
