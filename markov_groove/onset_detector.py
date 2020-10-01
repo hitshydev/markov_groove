@@ -1,5 +1,8 @@
 """
-TODO: This is part of bla
+The onset_detector module encapsulates the onset detection
+of the essentia module. The enums provide easy an replicable
+way to use the certain parameters, that are available for the
+onset detection.
 """
 from enum import Enum
 
@@ -42,7 +45,6 @@ class Window(Enum):
     BLACKMANHARRIS92 = "blackmanharris92"
 
 
-# pylint: disable=too-few-public-methods
 class OnsetDetector:
     """
     This class provides the onset detection.
