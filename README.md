@@ -6,7 +6,7 @@
 
 <p align="center">
     <a title="AGPLv3 License" href="https://choosealicense.com/licenses/agpl-3.0/">
-      <img alt="License: AGPLv3" src="https://img.shields.io/badge/LICENSE-AGPLv3-blue?style=for-the-badge" />
+      <img alt="License: MIT" src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge" />
     </a>
     <a href="https://github.com/psf/black">
         <img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000?style=for-the-badge"">
