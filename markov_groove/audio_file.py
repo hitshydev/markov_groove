@@ -41,7 +41,9 @@ class AudioFile:
     __bpm: float
     __margin: int
 
-    def __init__(self, audio: es.array, bpm: int = 0, sample_rate: int = 44100) -> None:
+    def __init__(
+        self, audio: NDArray[Float32], bpm: int = 0, sample_rate: int = 44100
+    ) -> None:
         self.__bpm = float(bpm)
         self.sample_rate = sample_rate
         self.__margin = self.__MARGIN_FACTOR * sample_rate
