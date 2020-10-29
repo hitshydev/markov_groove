@@ -16,7 +16,7 @@ _NOTE_DURATION: Final[float] = 0.5
 
 class MidiSequencer(Sequencer):
     """
-    TODO: This is part of bla
+    See the docs of Sequencer.
     """
 
     pattern: Final[NDArray[Note]]
@@ -36,9 +36,6 @@ class MidiSequencer(Sequencer):
     def from_file(
         cls, mid: PrettyMIDI, bpm: int, beats: int = 8, steps: int = 16,
     ):
-        """
-        TODO: This is part of bla
-        """
         ppqn = int(np.round(steps / 4))
         end_tick = beats * steps
 

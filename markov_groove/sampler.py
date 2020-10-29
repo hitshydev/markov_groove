@@ -5,7 +5,7 @@ creating samples from an audio file with their onsets.
 The length of each sample varies, and is limited by the next
 onset index.
 The KeyFunction enum is used to define the keyfunctions,
-that are used to describe the samples in a TODO: mathematical
+that are used to describe the samples in a numerical
 way.
 """
 from enum import Enum
@@ -162,7 +162,6 @@ def _get_centroid(sample: NDArray[Float32], centroid, spectrum, window) -> float
 
 def _get_max(sample: NDArray[Float32], spectrum, window) -> float:
     """
-    TODO: implement me
     This function could be used as another key, for the get_key closure.
     """
     raise NotImplementedError()
@@ -170,7 +169,6 @@ def _get_max(sample: NDArray[Float32], spectrum, window) -> float:
 
 def _get_mfcc(sample: NDArray[Float32], mfcc, spectrum, window) -> float:
     """
-    TODO: implement me
     Return the mfcc of a sample.
     """
     return mfcc(spectrum(window(sample)))
@@ -178,7 +176,6 @@ def _get_mfcc(sample: NDArray[Float32], mfcc, spectrum, window) -> float:
 
 def _get_melbands(sample: NDArray[Float32], mfcc, spectrum, window) -> float:
     """
-    TODO: implement me
     Return the mfcc of a sample.
     """
     raise NotImplementedError()

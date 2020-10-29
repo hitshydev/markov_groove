@@ -57,5 +57,3 @@ Some libraries are needed prior before using.
 
 ### FluidSynth
     sudo apt-get install fluidsynth
-
-TODO: Add citetation

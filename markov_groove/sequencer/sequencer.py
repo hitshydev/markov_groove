@@ -8,7 +8,21 @@ from markov_groove.audio_file import AudioFile
 
 class Sequencer(ABC):
     """
-    A sequencer can be initalized
+    A sequencer can be initalized by a given pattern or
+    by using the Class methods from_sampler() or from_file().
+
+    Args:
+        pattern (NDArray[Any]): The audio represented in binary form as np.array of float32.
+        bpm (int): The bpm of the given sequence. This is used when creating the beat.
+        beats (int): The amount of beats of the sequence. If shorter than the given sequence, the 
+            created beat is going to be shortend as well.
+        steps (int): The resolution of every beat.
+
+    Attributes:
+        audio (NDArray[Float32]): The audio in binary form as np.array with dtype float32.
+        file_path (Window): The function to apply to every frame.
+        sample_rate (int): The sampling rate.
+        bpm (int): The bpm. This might not be set on init and can be checked with check_bpm().
     """
 
     # pattern: NDArray[Any]

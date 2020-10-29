@@ -91,7 +91,6 @@ def find_closest_samples(
     sequencer: AudioSequencer, samples: Dict[float, NDArray[np.float32]]
 ):
     """
-    TODO:
     Find the closest sample in a given Dictonary of samples
     by using the samples in the seqencer.
     """

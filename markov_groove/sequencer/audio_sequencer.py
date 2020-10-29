@@ -13,7 +13,7 @@ from .sequencer import Sequencer
 
 class AudioSequencer(Sequencer):
     """
-    TODO: This is part of bla
+    See the docs of Sequencer.
     """
 
     pattern: Final[NDArray[Float32]]

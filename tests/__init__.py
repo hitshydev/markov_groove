@@ -1,5 +1,5 @@
 """
-TODO: This is part of bla
+This is the test module.
 """
 
 from .test_audio_file import *
