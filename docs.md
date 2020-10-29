@@ -570,7 +570,7 @@ creating samples from an audio file with their onsets.
 The length of each sample varies, and is limited by the next
 onset index.
 The KeyFunction enum is used to define the keyfunctions,
-that are used to describe the samples in a TODO: mathematical
+that are used to describe the samples in a numerical
 way.
 
 
@@ -671,7 +671,7 @@ keyfunctions available.
 
 
 >     class Sampler(
->         onsets: <function array at 0x7f956e527790>,
+>         onsets: <function array at 0x7fa516d9b700>,
 >         samples: Dict[float, array],
 >         sample_rate: int
 >     )
@@ -763,7 +763,7 @@ Type: `Dict[Any, nptypes._ndarray.NDArray]`
 >     def from_audio(
 >         audio: markov_groove.audio_file.AudioFile,
 >         windowfnc: markov_groove.onset_detector.Window = Window.HANN,
->         onsets: <function array at 0x7f956e527790> = None,
+>         onsets: <function array at 0x7fa516d9b700> = None,
 >         onset_algorithm: markov_groove.onset_detector.OnsetAlgorithm = OnsetAlgorithm.COMPLEX,
 >         keyfnc_type: markov_groove.sampler.KeyFunction = KeyFunction.CENTROID
 >     )
@@ -829,7 +829,7 @@ samples (int): The desired sampling rate of the audio file.
 >     )
 
 
-TODO: This is part of bla
+See the docs of Sequencer.
 
 
     
@@ -981,7 +981,7 @@ Encodes the pattern in a string.
 >     )
 
 
-TODO: This is part of bla
+See the docs of Sequencer.
 
 
     
@@ -1084,7 +1084,7 @@ Decode the pattern of a string list and create a sequencer from it.
 >     )
 
 
-TODO: This is part of bla
+
 
 
     
@@ -1156,7 +1156,48 @@ Encode the pattern in a list of strings.
 >     class Sequencer
 
 
-A sequencer can be initalized
+A sequencer can be initalized by a given pattern or
+by using the Class methods from_sampler() or from_file().
+
+
+Args
+-----=
+**```pattern```** :&ensp;<code>NDArray\[Any]</code>
+:   The audio represented in binary form as np.array of float32.
+
+
+**```bpm```** :&ensp;<code>int</code>
+:   The bpm of the given sequence. This is used when creating the beat.
+
+
+**```beats```** :&ensp;<code>int</code>
+:   The amount of beats of the sequence. If shorter than the given sequence, the 
+    created beat is going to be shortend as well.
+
+
+**```steps```** :&ensp;<code>int</code>
+:   The resolution of every beat.
+
+
+
+Attributes
+-----=
+**```audio```** :&ensp;<code>NDArray\[Float32]</code>
+:   The audio in binary form as np.array with dtype float32.
+
+
+**```file_path```** :&ensp;<code>Window</code>
+:   The function to apply to every frame.
+
+
+**```sample_rate```** :&ensp;<code>int</code>
+:   The sampling rate.
+
+
+**```bpm```** :&ensp;<code>int</code>
+:   The bpm. This might not be set on init and can be checked with check_bpm().
+
+
 
 
     
@@ -1310,7 +1351,6 @@ have to be the same.
 >     )
 
 
-TODO:
 Find the closest sample in a given Dictonary of samples
 by using the samples in the seqencer.
 
