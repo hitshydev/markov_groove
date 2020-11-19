@@ -671,7 +671,7 @@ keyfunctions available.
 
 
 >     class Sampler(
->         onsets: <function array at 0x7fa516d9b700>,
+>         onsets: <function array at 0x7f29fe77c700>,
 >         samples: Dict[float, array],
 >         sample_rate: int
 >     )
@@ -763,7 +763,7 @@ Type: `Dict[Any, nptypes._ndarray.NDArray]`
 >     def from_audio(
 >         audio: markov_groove.audio_file.AudioFile,
 >         windowfnc: markov_groove.onset_detector.Window = Window.HANN,
->         onsets: <function array at 0x7fa516d9b700> = None,
+>         onsets: <function array at 0x7f29fe77c700> = None,
 >         onset_algorithm: markov_groove.onset_detector.OnsetAlgorithm = OnsetAlgorithm.COMPLEX,
 >         keyfnc_type: markov_groove.sampler.KeyFunction = KeyFunction.CENTROID
 >     )
@@ -1355,6 +1355,23 @@ Find the closest sample in a given Dictonary of samples
 by using the samples in the seqencer.
 
     
+### Function `plot_dataset` {#markov_groove.util.plot_dataset}
+
+
+
+
+>     def plot_dataset(
+>         dataset,
+>         title,
+>         ylabel='',
+>         is_midi=False
+>     )
+
+
+Plot all sequencers of the given dataset.
+If using a midi dataset set is_midi flag.
+
+    
 ### Function `read_audio_files` {#markov_groove.util.read_audio_files}
 
 
@@ -1377,8 +1394,9 @@ For all following directories use **/*.*.
 
 >     def read_midi_files(
 >         path: Union[pathlib.Path, str],
->         regex: str
->     ) ‑> List[pretty_midi.pretty_midi.PrettyMIDI]
+>         regex: str,
+>         extra: bool = True
+>     ) ‑> List[Tuple[pretty_midi.pretty_midi.PrettyMIDI, int]]
 
 
 Reads mid files in given folder and returns a list of PrettyMIDI.
