@@ -7,6 +7,8 @@ or reading multiple audio files.
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import numpy as np
 from nptyping import Float32, NDArray
 from pretty_midi import PrettyMIDI
@@ -14,7 +16,7 @@ from pretty_midi import PrettyMIDI
 from .audio_file import AudioFile
 from .onset_detector import OnsetAlgorithm
 from .sampler import KeyFunction, Sampler
-from .sequencer import AudioSequencer, Sequencer
+from .sequencer import AudioSequencer, MidiSequencer, Sequencer
 
 
 def create_knowledge_base(
@@ -54,7 +56,7 @@ def create_knowledge_base(
     return sequences, samples
 
 
-def read_audio_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
+def read_audio_files(path: Union[Path, str], regex: str) -> List[AudioFile]:
     """
     Reads audio files in given folder and returns a list of AudioFile.
     For all following directories use **/*.*.
@@ -66,13 +68,15 @@ def read_audio_files(path: Union[Path, str], regex: str,) -> List[AudioFile]:
     ]
 
 
-def read_midi_files(path: Union[Path, str], regex: str,) -> List[PrettyMIDI]:
+def read_midi_files(path: Union[Path, str], regex: str, extra: bool = True) -> List[Tuple[PrettyMIDI, int]]:
     """
     Reads mid files in given folder and returns a list of PrettyMIDI.
     For all following directories use **/*.*.
     """
     folder = Path(path)
-    return [PrettyMIDI(file.as_posix()) for file in folder.glob(regex)]
+    if extra:
+        return [(PrettyMIDI(file.as_posix()), int(file.parent.stem) if file.parent.stem != 'extra' else int(file.parent.parent.stem)) for file in folder.glob(regex)]
+    return [(PrettyMIDI(file.as_posix()), int(file.parent.stem)) for file in folder.glob(regex) if file.parent.stem != 'extra']
 
 
 def find_closest(array: NDArray, value):
@@ -83,7 +87,7 @@ def find_closest(array: NDArray, value):
     Furthermore the dtype of array and the value
     have to be the same.
     """
-    idx = (np.abs(array - value)).min()
+    idx = (np.abs(array - np.float32(value))).min()
     return array[idx]
 
 
@@ -96,4 +100,20 @@ def find_closest_samples(
     """
     for idx, key in enumerate(sequencer.pattern):
         if not np.isnan(key):
-            sequencer.pattern[idx] = find_closest(np.array(samples.keys()), key)
+            sequencer.pattern[idx] = find_closest(np.fromiter(samples.keys(), dtype=np.float32), key)
+
+def plot_dataset(dataset, title, ylabel = "", is_midi = False):
+    """
+    Plot all sequencers of the given dataset.
+    If using a midi dataset set is_midi flag.
+    """
+    colors = cm.hsv(np.linspace(0, 1, len(dataset)))
+    _, ax = plt.subplots(figsize=(20, 10))
+    for sequencer, color in zip(dataset, colors):
+        sequencer.visualize(ax, color)
+    plt.title(title)
+    plt.xlabel("Steps")
+    plt.ylabel(ylabel)
+    if is_midi:
+        plt.yticks(range(35, 82))
+    plt.show()

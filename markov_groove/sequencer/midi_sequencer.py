@@ -36,7 +36,6 @@ class MidiSequencer(Sequencer):
     def from_file(
         cls, mid: PrettyMIDI, bpm: int, beats: int = 8, steps: int = 16,
     ):
-        ppqn = int(np.round(steps / 4))
         end_tick = beats * steps
 
         drum_track = _find_drum_track(mid)
@@ -45,9 +44,7 @@ class MidiSequencer(Sequencer):
         pattern.fill(None)
         # Add up notes
         for note in drum_track.notes:
-            note_start_tick = int(
-                np.round(second2tick(note.start, ppqn, bpm2tempo(bpm)))
-            )
+            note_start_tick = int(np.round(mid.time_to_tick(note.start) / mid.resolution * steps))
             if note_start_tick <= end_tick:
                 pattern[note.pitch, note_start_tick] = note
         return cls(pattern, bpm, beats, steps)
@@ -80,7 +77,7 @@ class MidiSequencer(Sequencer):
         """
         Decode the pattern of a string list and create a sequencer from it.
         """
-        ppqn = int(np.round(steps / 4))
+        ppqn = steps
         end_tick = beats * steps
         # Allocate the array
         pattern = np.empty((128, len(string_pattern)), dtype=np.object)

@@ -81,14 +81,17 @@ class AudioSequencer(Sequencer):
         """
         pattern = np.empty((len(string_pattern)), dtype=np.float32)
         for idx, string in enumerate(string_pattern):
-            pattern[idx] = np.float32(string)
+            if string:
+                pattern[idx] = np.float32(string)
+            else:
+                pattern [idx] = np.nan
         return cls(pattern, bpm, beats, steps)
 
     def encode(self) -> List[str]:
         """
         Encodes the pattern in a string.
         """
-        return [f"{freq}" for freq in self.pattern]
+        return [f"{freq}" if np.isfinite(freq) else "" for freq in self.pattern]
 
     def visualize(self, ax_subplot, color: Union[NDArray, str], marker: str = "+"):
         """
